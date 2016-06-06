@@ -35,7 +35,8 @@ OpenCV更新3.x系列的第一个稳定版本3.10了。为了跟上时代的潮�
 然后直接编辑这个属性表，内容如下，需要注意的是其中的OpenCV目录改为自己对应的目录即可：
 
 {% codeblock lang:xaml %}
-ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
