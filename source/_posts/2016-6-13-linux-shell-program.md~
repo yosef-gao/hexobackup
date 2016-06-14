@@ -4,21 +4,23 @@ tags:
   - linux
   - shell
 categories: Linux
+date: 2016-06-13 15:27:34
 ---
+
 
 在shell中有一段代码需要重复使用时，就可以用函数来代替。
 <!--more-->
 
 函数创建与使用
 -------------
-有两种格式可以用来在bash shell脚本中床济纳函数。第一种格式采用关键字function，后跟分配给该代码块的函数名：
+有两种格式可以用来在bash shell脚本中创建函数。第一种格式采用关键字function，后跟分配给该代码块的函数名：
 {% codeblock lang:bash %}
 function name {
     commands
 }
 {% endcodeblock %}
 name属性定义了赋予函数的唯一名称。脚本中定义的每个函数都必须是唯一的名称。
-bash shell脚本中定义函数的第二种格式跟在其他便横语言中定义函数很像：
+bash shell脚本中定义函数的第二种格式跟在其他语言中定义函数很像：
 {% codeblock lang:bash %}
 name() {
     commands
@@ -107,6 +109,7 @@ $
 但当使用这种方法从函数中返回值时，要记住下面两点：
 - 函数一结束就取返回值
 - 退出状态码必须在0~255之间。
+
 如果在用$?变量提取函数返回值之前执行了其他命令，函数的返回值就可能会丢失。
 
 **3. 使用函数输出**
@@ -230,5 +233,24 @@ $
 ---------
 bash shell的函数递归与其他语言类似，下面举一个阶乘递归的例子：
 {% codeblock lang:bash %}
+$ cat test17.sh 
+#!/bin/bash
 
+function factorial {
+    if [ $1 -eq 1 ]; then
+        echo 1
+    else
+        local temp=$[ $1 - 1 ]
+        local result=`factorial $temp`
+        echo $[ $result * $1 ]
+    fi
+}
+
+read -p "Enter value: " value
+result=`factorial $value`
+echo "The factorial of $value is: $result"
+$ 
+$ ./test17.sh 
+Enter value: 4
+The factorial of 4 is: 24
 {% endcodeblock %}

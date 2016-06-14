@@ -6,8 +6,6 @@ categories: Image and Grapgics
 date: 2016-04-16 17:37:34
 ---
 
-
-<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=default"></script>
 什么是例子滤波
 ---------------
 “估计”就是从带有随机误差的观测数据中估计出某些参数或某些状态变量。估计问题一般分为三类：从当前和过去的观测值来估计信号的当前值，称为滤波；从过去的观测值来估计信号的将来值，称为预测或外推；从过去的观测值来估计过去的信号值，称为平滑或内插。滤波理论就是在对系统可观测信号进行测量的基础上，根据一定的滤波准则，对系统的状态或参数进行估计的理论和方法。
@@ -27,6 +25,7 @@ date: 2016-04-16 17:37:34
 {% asset_img "step1.png" "初始化与搜索阶段" %}
 **3. 决策阶段**
 这个阶段，我们撒出去的粒子要向我们报告他们的状态了。比如1号粒子报告，它所在区域和目标的相似度为0.1，2号粒子报告它所在区域和目标的相似度为0.2，3号粒子报告它所在的区域和目标的相似度为0.3……这里的相似度为上一步中计算得到的。那么我们可以综合这些粒子报告的信息来猜测出目:标的实际位置，即对这些粒子报告的信息做一下加权平均
+<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=default"></script>
 $$x=\sum\_{i=1}^n x\_i\*w\_i$$
 $$y=\sum\_{i=1}^n y\_i\*w\_i$$
 {% asset_img "step3.png" "决策阶段" %}
