@@ -5,7 +5,9 @@ tags:
   - linux
 categories: Program
 author: yosef gao
+date: 2016-06-16 13:37:13
 ---
+
 
 陈硕老师《Linux 多线程服务端编程 使用muduo C++网络库》一书中对于MutexLock、MutexLockGuard的封装，主要用到了C++中的[RAII技术](/2016/06/14/cpp-raii/)。
 
@@ -91,5 +93,41 @@ void doit()
     // 正确写法是 MutexLockGuard lock(mutex);
     //
     // 临界区
+}
+{% endcodeblock %}
+
+{% codeblock lang:cpp Condition.cpp%}
+class Condition : boost::noncopyable
+{
+    public:
+        explicit Condition(MutexLock& mutex)
+            : mutex_(mutex)
+        {
+            pthread_cond_init(&pcond_, NULL);
+        }
+
+        ~Condition()
+        {
+            pthread_cond_destory(&pcond_);
+        }
+
+        void wait() 
+        {
+            pthread_cond_wait(&pcond_, mutex_.getPthreadMutex());
+        }
+
+        void notify()
+        {
+            pthread_cond_signal(&pcond_);
+        }
+
+        void notifyAll()
+        {
+            pthread_cond_broadcast(&pcond_);
+        }
+
+    private:
+        MutexLock& mutex_;
+        pthread_cond_t pcond;
 }
 {% endcodeblock %}
