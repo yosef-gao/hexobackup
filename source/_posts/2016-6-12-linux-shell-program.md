@@ -179,3 +179,30 @@ Line 3: O Remeo, Romeo! Wherefore art thou Remeo?
 Finished processing the file
 $ 
 {% endcodeblock %}
+
+数据流重定向(redirect)
+-------------
+数据流重定向可以将standard output(stdout)和standard error output(stderr)分别传送到其他的文件或设备去，其中传送所用的特殊字符如下所示：
+1. 标准输入(stdin)：代码为0,使用<或<<；
+2. 标准输出(stdout)：代码为1,使用>或>>;
+3. 标准错误输出(stderr)：代码为2,使用2>或2>>。
+
+其中>(<)和>>(<<)的区别如下,注意数字和符号之间没有空格：
+- 1>：以覆盖的方法将正确的数据输出到指定的文件或设备上(不存在则创建)；
+- 1>>：以累加的方法将正确的数据输出到指定的文件或设备上；
+- 2>：以覆盖的方法将错误的数据输出到指定的文件或设备上；
+- 2>>：以累加的方法将错误的数据输出到指定的文件或设备上；
+- <：将原本需要由键盘输入的数据改由文件内容来替代；
+- <<：内联输入重定向，代表结束输入的意思，具体见下面例子。
+
+如果需要忽略输出的内容，可以使用如下方法，可以把/dev/null理解为一个黑洞设备：
+{% codeblock lang:bash %}
+find /home -name .bashrc 2> /dev/null
+{% endcodeblock %}
+
+如果需要把正穷与错误数据都写入同一个文件中，可以使用如下方法
+{% codeblock lang:bash %}
+find /home -name .bashrc > list 2> list # 错误的方法，会造成数据交替写入，次序混乱
+find /home -name .bashrc > list 2>&1 	# 正确
+find /home -name .bashrc &> list	# 正确
+{% endcodeblock %}

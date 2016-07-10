@@ -3,11 +3,11 @@ title: su与sudo
 tags: linux
 categories: Linux
 author: yosef gao
+date: 2016-07-08 14:13:41
 ---
 
-在linux中，用切换不同身份去执行不同的任务是很常见的事情，本文在鸟哥linux私房菜书的基础上，归纳总结了用户身份切换命令su与sudo命令的常见用法与说明。
 
-<!--more-->
+在linux中，用切换不同身份去执行不同的任务是很常见的事情，本文在鸟哥linux私房菜书的基础上，归纳总结了用户身份切换命令su与sudo命令的常见用法与说明。
 
 su
 ----
