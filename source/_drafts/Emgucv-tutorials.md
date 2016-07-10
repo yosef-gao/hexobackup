@@ -1,4 +1,0 @@
----
-title: Emgucv tutorials
-tags:
----

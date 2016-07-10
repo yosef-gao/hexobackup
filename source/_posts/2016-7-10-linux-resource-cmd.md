@@ -3,7 +3,9 @@ title: Linux资源查看
 tags: linux
 categories: Linux
 author: yosef gao
+date: 2016-07-10 15:25:32
 ---
+
 
 本文根据鸟哥书，总结了一些linux下常用的资源查看命令及其用法。
 <!--more-->
