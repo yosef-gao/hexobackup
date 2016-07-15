@@ -1,0 +1,144 @@
+---
+title: NFS服务器搭建与演示
+tags: 
+  - linux
+  - nfs
+categories: Linux
+author: yosef gao
+---
+
+NFS(Network File System)的简称，目地就是让不同的机器、不同的操作系统可以彼此共享数据文件，在局域网环境下是共享数据文件的一种简单高效的方式。本文简单介绍NFS服务端与客户端的配置与启动，服务器环境为Arch Linux，客户端环境为Ubuntu 14.04.1。
+
+<!--more-->
+
+NFS与RPC
+---------
+NFS(Network File System)的功能是可以通过网络，让不同的机器、不同的操作系统可以共享彼此的文件，所以，也可以简单地将它看作是一个文件服务器。这个NFS服务器可以让PC将网络中的NFS服务器共享的目录挂载到本地的文件系统中，而在本地的文件系统中看来，那个远程主机的目录就好像是自己的一个磁盘分区一样。
+
+因为NFS支持的功能相当多，而不同的功能都会使用不同的程序来启动，每启动一个功能就会启用一些端口来传输数据，因此NFS的功能所对应的端口并不固定，而是随即去用一些未被使用的小于1024的端口用于传输。由于客户端连接服务器的时候需要知道相关的端口才能连接，因此这里就需要用到远程过程调用RPC(Remote Procedure Call)的服务了。RPC最主要的功能就是指定每个NFS功能所对应的port number，并通知给客户端，让客户端可以连接到正确的端口去。(那么RPC又是如何知道端口的呢？)当服务器在启动NFS的时候会随即选取数个端口，并主动向RPC注册，因此RPC可以知道每个端口对应的NFS功能。所以，NFS服务器也成为RPC Server之一。
+
+NFS Server配置
+-----------------
+**1.安装nfs软件**
+首先需要安装nfs软件，这里以Arch Linux为例。
+{% codeblock lang:bash %}
+pacman -Sy nfs-utils
+{% endcodeblock %}
+这样就完成了nfs及其相关服务的安装。ufs-utils主要包括rpc.nfsd以及rpc.mountd这两个NFS daemons以及其他相关documents。
+
+**2.配置文件/etc/exports**
+NFS服务器的搭建十分简单，基本只要编辑好配置文件/etc/exports之后先启动rpcbind，在启动nfs就可以了(当然往复杂说的话还包括权限等一堆问题)。
+先看一下笔者的局域网环境，arch linux和ubuntu都是在虚拟机下的192.168.26.0/24网段，其中arch linux ip:192.168.26.135。因此/etc/exports文件编辑如下
+{% codeblock lang:bash %}
+mkdir -p ~/nfs/public	# 建立共享目录
+vim /etc/exports
+/root/nfs/public	192.168.26.0/24(insecure,rw,no_root_squash)
+{% endcodeblock %}
+来解释一下/etc/exports文件各项的含义：第一列是共享目录，第二列是主机(权限)。其中主机可以有多个，主机后面跟`()`表示权限，权限之间用`,`隔开，**注意`,`之间没有空格**。主机名的设置主要有以下几种方式：
+- 可以使用完整的IP或者是网络号，例如192.168.100.10或192.168.100.0/24，或192.168.100.0/255.255.255.0都可以接受。
+- 可以使用主机名，但这个主机名必须要在/etc/hosts内，或可使用DNS找到该名称才行。重点就是可以找到主机名对应的IP就行。如果是主机名的话，那么可以支持通配符，例如`*`或`?`均可接受。
+权限参考下表
+
+| 参数值			| 内容说明 												|
+| :------------ 		|:----------												|
+| rw<br>ro 	 		| 该目录共享的权限是可读写(read-write)或只读(read-only)，但最终能不能读写，还是与文件系统的rwx及身份有关	|
+| sync<br>async			| sync代表数据会同步写入到内存与硬盘中，async则代表数据会先暂存到内存中，而非直接写入硬盘			|
+| no_root_squash<br>root_sqush	| 客户端使用NFS文件系统的帐号若为root时，默认情况下，客户端root的身份会由root_sqush的设置压缩成nfsnobody，如此对服务器的系统会较有保障。但如果想要开放客户端使用root身份来登陆服务器的文件系统，那么这里就需要开发no_root_squash才行 |
+| all_squash			| 不论登陆NFS的用户身份为何，他的身份都会被压缩成为匿名用户，通常也就是nobody(nfsnobody) |
+| anonuid<br>anongid		| anon意指anonymous(匿名用户)前面关于*_suqash提到的匿名用户的UID设置值，通常为nobody(nfsnobody)，但是你可以自行设置这个UID的值。当然，这个UID必须要存在于/etc/passwd当中。anonuid指的是UID的值，anongid指的是GID |
+这几个都是比较常见的权限参数，其余参数可以参考`man exports`，其中insecure允许使用大于1024的端口。
+
+**3.启动NFS**
+在arch linux中使用systemctl来启动服务，而有些系统中则使用/etc/init.d/启动
+{% codeblock lang:bash %}
+[vuser@vuser ~]$ sudo systemctl start nfs-server
+# 如果启动后需要修改/etc/exports文件，修改完毕之后运行如下命令
+exportfs: /etc/exports [2]: Neither 'subtree_check' or 'no_subtree_check' specified for export "192.168.26.0/24:/root/nfs/public".
+  Assuming default behaviour ('no_subtree_check').
+  NOTE: this default has changed since nfs-utils version 1.0.x
+
+exporting 192.168.26.0/24:/root/nfs/public
+{% endcodeblock %}
+启动过程中可能会提示一些警告信息，忽略即可。在确认启动没有问题之后，接下来可以看一下NFS到底开启了哪些端口。
+{% codeblock lang:bash %}
+[vuser@vuser ~]$ sudo netstat -tulnp | grep -E '(rpc|nfs)'
+tcp        0      0 0.0.0.0:111             0.0.0.0:*               LISTEN      1770/rpcbind        
+tcp        0      0 0.0.0.0:20048           0.0.0.0:*               LISTEN      2109/rpc.mountd     
+tcp        0      0 0.0.0.0:40757           0.0.0.0:*               LISTEN      1788/rpc.statd      
+tcp6       0      0 :::111                  :::*                    LISTEN      1770/rpcbind        
+tcp6       0      0 :::20048                :::*                    LISTEN      2109/rpc.mountd     
+tcp6       0      0 :::37523                :::*                    LISTEN      1788/rpc.statd      
+udp        0      0 0.0.0.0:36339           0.0.0.0:*                           1788/rpc.statd      
+udp        0      0 0.0.0.0:20048           0.0.0.0:*                           2109/rpc.mountd     
+udp        0      0 0.0.0.0:111             0.0.0.0:*                           1770/rpcbind        
+udp        0      0 0.0.0.0:647             0.0.0.0:*                           1770/rpcbind        
+udp        0      0 127.0.0.1:703           0.0.0.0:*                           1788/rpc.statd      
+udp6       0      0 :::20048                :::*                                2109/rpc.mountd     
+udp6       0      0 :::111                  :::*                                1770/rpcbind        
+udp6       0      0 :::33918                :::*                                1788/rpc.statd      
+udp6       0      0 :::647                  :::*                                1770/rpcbind
+{% endcodeblock %}
+可以看出，NFS开启了很多port，不过主要的端口是：
+- rpcbind启动的port在111，同时启动在udp与tcp。
+- NFS本身服务启动在port2049上(不清楚为什么这里没有显示，下文有)。
+- 其余rpc.*服务启动的port是随机产生的，因此需要向port111注册。
+常看RPC服务的注册状况使用rpcinfo来查看。
+{% codeblock lang:bash %}
+[vuser@vuser ~]$ rpcinfo -p localhost
+   program vers proto   port  service
+    100000    4   tcp    111  portmapper
+    100000    3   tcp    111  portmapper
+    100000    2   tcp    111  portmapper
+    100000    4   udp    111  portmapper
+    100000    3   udp    111  portmapper
+    100000    2   udp    111  portmapper
+    100024    1   udp  36339  status
+    100024    1   tcp  40757  status
+    100005    1   udp  20048  mountd
+    100005    1   tcp  20048  mountd
+    100005    2   udp  20048  mountd
+    100005    2   tcp  20048  mountd
+    100005    3   udp  20048  mountd
+    100005    3   tcp  20048  mountd
+    100003    3   tcp   2049  nfs
+    100003    4   tcp   2049  nfs
+    100227    3   tcp   2049  nfs_acl
+    100003    3   udp   2049  nfs
+    100003    4   udp   2049  nfs
+    100227    3   udp   2049  nfs_acl
+    100021    1   udp  39393  nlockmgr
+    100021    3   udp  39393  nlockmgr
+    100021    4   udp  39393  nlockmgr
+    100021    1   tcp  39027  nlockmgr
+    100021    3   tcp  39027  nlockmgr
+    100021    4   tcp  39027  nlockmgr
+{% endcodeblock %}
+上面的信息可以与netstat输出的数据做比较，还可以看到nfs支持的版本。
+
+**4.NFS连接**
+需要扫描某一台主机提供的NFS共享目录时，就使用showmount -e IP(或hostname)即可。
+在笔者的Ubuntu下：
+{% codeblock lang:bash %}
+# showmount [-ae] [hostname|IP]
+# -a : 显示当前主机与客户端的NFS连接共享状态
+# -e : 显示某台主机的/etc/exports所共享的目录数据
+showmount -e 192.168.26.135
+Export list for 192.168.26.135:
+/root/nfs/public 192.168.26.0/24
+vuser@vuser-virtual-machine:~$ 
+{% endcodeblock %}
+客户端关在NFS服务器提供的文件系统步骤如下：
+1. 确认本地端已经启动了rpcbind服务；
+2. 扫描NFS服务器共享的目录有哪些，并了解是否可用；
+3. 在本地建立预计挂载的挂载点目录；
+4. 利用mount将远程主机直接挂载到相关目录。
+{% codeblock lang:bash %}
+mkdir -p ~/nfs/public/
+sudo mount -t nfs 192.168.26.135:/root/nfs/public ~/nfs/public/
+mount.nfs: access denied by server while mounting 192.168.26.135:/root/nfs/public
+# 提示access denied
+sudo mount -t nfs -o "vers=3" 192.168.26.135:/root/nfs/public ~/nfs/public/
+{% endcodeblock %}
+这里挂载的时候提示access denied，加上-o "vers=3"即可，参考[这里](http://superuser.com/questions/812382/mounting-nfs-gives-access-denied-by-server-while-mounting-null)，似乎是和nfs的版本有关。
+
+到此NFS的基本使用就差不多了，还有更进一步的权限管理，开机挂载以及其他挂载失败的原因请参考鸟哥服务器一书。
