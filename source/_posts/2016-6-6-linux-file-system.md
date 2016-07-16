@@ -1,6 +1,8 @@
 ---
 title: Linux 文件系统
-tags: linux
+tags: 
+  - linux
+  - file system
 author: yosef gao
 categories: Linux
 date: 2016-06-06 14:40:41

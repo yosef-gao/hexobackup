@@ -1,6 +1,8 @@
 ---
 title: 浅谈粒子滤波
-tags: Particle Filter
+tags: 
+  - particle filter
+  - image process
 author: yosef gao
 categories: Image and Grapgics
 date: 2016-04-16 17:37:34

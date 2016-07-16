@@ -2,7 +2,7 @@
 title: 一个基于事件驱动(event-driven)的回显服务器实现
 tags:
   - linux
-  - epoll
+  - c/c++
 author: yosef gao
 categories: Linux
 date: 2016-04-04 22:21:35

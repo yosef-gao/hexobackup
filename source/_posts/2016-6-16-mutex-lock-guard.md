@@ -1,7 +1,7 @@
 ---
 title: Mutex Lock Guard
 tags:
-  - C++
+  - c/c++
   - linux
 categories: Program
 author: yosef gao

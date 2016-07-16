@@ -1,7 +1,10 @@
 ---
 title: 用新浪SAE从aqicn.org抓取数据
 tags:
+  - sae
   - python
+  - bottle
+  - mysql
 categories: Program
 author: yosef gao
 date: 2016-03-12 22:03:09

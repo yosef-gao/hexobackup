@@ -1,6 +1,7 @@
 ---
 title: 简单Linux C线程池的实现
 tags:
+  - c/c++
   - linux
 categories: Linux
 author: yosef gao
