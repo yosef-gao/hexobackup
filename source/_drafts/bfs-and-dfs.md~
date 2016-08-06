@@ -1,0 +1,249 @@
+---
+title: 深度优先搜索与广度优先搜索
+tags:
+  - bfs
+  - dfs
+categories: Algorithm
+---
+
+今天做笔试题遇到两个很有代表性的题目，分别用到了广度优先搜索和深度优先搜索，可以记录并分析一下。
+<!--more-->
+
+广度优先搜索
+------------
+首先来看一下题目：
+```
+题目描述
+定义一个二维数组N*M(其中2<=N<=10;2<=M<=10)，如5 × 5数组下所示： 
+int maze[5][5] = {
+
+        0, 1, 0, 0, 0,
+
+        0, 1, 0, 1, 0,
+
+        0, 0, 0, 0, 0,
+
+        0, 1, 1, 1, 0,
+
+        0, 0, 0, 1, 0,
+
+};
+它表示一个迷宫，其中的1表示墙壁，0表示可以走的路，只能横着走或竖着走，
+不能斜着走，要求编程序找出从左上角到右下角的最短路线。
+入口点为[0,0],既第一空格是可以走的路。
+Input
+一个N × M的二维数组，表示一个迷宫。数据保证有唯一解,不考虑有多解的情况，即迷宫只有一条通道。
+Output
+左上角到右下角的最短路径，格式如样例所示。
+Sample Input
+0 1 0 0 0
+0 1 0 1 0
+0 0 0 0 0
+0 1 1 1 0
+0 0 0 1 0
+Sample Output
+(0, 0)
+(1, 0)
+(2, 0)
+(2, 1)
+(2, 2)
+(2, 3)
+(2, 4)
+(3, 4)
+(4, 4)
+```
+从題意来看的话因为要搜索的是最短路径，所有应该是用广度优先搜索算法没跑了。
+广度优先搜索(Breadth First Search, BFS)，又叫宽度优先搜索，是一种穷举的搜索算法，算法把所有展开的节点放入一个先进先出的队列中，依次搜索解，因此，如果算法有解的话，一定是最优解或最优解之一。BFS常用队列或链表实现。
+
+直接上代码：
+{% codeblock lang:cpp %}
+#include <iostream>
+#include <list>
+#include <vector>
+using namespace std;
+
+typedef struct node
+{
+	int x;
+	int y;
+	int id;	// 节点ID
+	int patent;	// 父节点ID
+}node;
+
+inline bool isvalid(int x, int y, int m, int n)
+{
+	if (x >= 0 && x < m &&
+		y >= 0 && y < n)
+		return true;
+	return false;
+}
+
+int BFS(vector<vector<int>> &maze, vector<node> &node_table, int start_x, int start_y, int end_x, int end_y)
+{
+	// 基本思想，广度优先，找最短路径
+	int m, n, id = 0,
+		new_x, new_y;
+	n = maze.size();
+	m = maze[0].size();
+	// open table
+	list<node> open = { node_table[id] };
+	id++;
+	// close table
+	vector<vector<bool>> visited(n, vector<bool>(m, false));
+	visited[0][0] = true;
+	// 四个方向
+	vector<pair<int, int>> dir = { { -1, 0 },{ 0, -1 },{ 1, 0 },{ 0, 1 } };
+	// 广度优先
+	while (!open.empty())
+	{
+		node cur = open.front(); // 每次从open表取出一个节点
+		open.pop_front();
+		// 已经找到
+		if (cur.x == end_x && cur.y == end_y) return cur.id;
+		// 四个方向扩展子节点
+		for (int i = 0; i < 4; ++i)
+		{
+			new_x = cur.x + dir[i].first;
+			new_y = cur.y + dir[i].second;
+			if (isvalid(new_x, new_y, n, m) && maze[new_x][new_y] != 1 && !visited[new_x][new_y])
+			{
+				node &tmp = node_table[id];
+				tmp.x = new_x;
+				tmp.y = new_y;
+				tmp.id = id;
+				tmp.patent = cur.id;
+				open.push_back(tmp);
+				visited[new_x][new_y] = true;
+				id++;
+			}
+		}
+	}
+	return -1;
+}
+
+// 递归输出路径
+void print_path(vector<node> &node_table, int id)
+{
+	if (node_table[id].patent != -1)
+		print_path(node_table, node_table[id].patent);
+		
+	cout << "(" << node_table[id].x << "," << node_table[id].y << ")" << endl;
+}
+
+int main(void)
+{
+	int n, m, id;
+	while (cin >> n >> m)
+	{
+		vector<vector<int>> maze(n, vector<int>(m, 0));
+		// node 表
+		vector<node> node_table(m * n, { 0, 0, 0, -1 });
+		for (int i = 0; i < n; ++i)
+		{
+			for (int j = 0; j < m; ++j)
+			{
+				cin >> maze[i][j];
+			}
+		}
+		id = BFS(maze, node_table, 0, 0, n - 1, m - 1);
+		print_path(node_table, id);
+	}
+	return 0;
+}
+{% endcodeblock %}
+可以看到代表并不是很复杂，BFS算法都在BFS这个函数中，而node这个结构主要是用来记录路径用的，便于找到路径之后通过递归展开输出路径。BFS函数中的思路也比较清晰，不断从open表头出去节点，并把扩展的子节点加入到open表尾部，即先进先出的思想。
+由于BFS中已经被访问过的节点如果第二次被访问，那么第二次访问时候的路径长度必然大于(或等于)第一次访问时的路径长度，因此就第二次访问的时候就不需要考虑该节点了，所以我们只需要记录被访问过的节点，而不用撤销访问(和DFS有所区别)。
+
+深度优先搜索
+-----------
+如果说广度优先搜索适合搜索最优解，那么深度优先搜索就是适合搜索是否存在解。还是先来看问题：
+```
+请设计一个函数，用来判断在一个矩阵中是否存在一条包含某字符串所有字符的路径。
+路径可以从矩阵中的任意一个格子开始，每一步可以在矩阵中向左，向右，向上，向下移动一个格子。
+如果一条路径经过了矩阵中的某一个格子，则该路径不能再进入该格子。 
+例如：
+abce
+sfcs
+adee 
+矩阵中包含一条字符串"bcced"的路径，但是矩阵中不包含"abcb"路径，
+因为字符串的第一个字符b占据了矩阵中的第一行第二个格子之后，路径不能再次进入该格子。
+```
+从题意可以看出，需要找到是否包含该路径，也就是找到是否存在解，所以此处用深度优先搜索比较合适。深度优先搜索展开子节点后把子节点加入到open表的头部，因此适合用递归来实现。
+
+直接上代码：
+{% codeblock lang:cpp %}
+#include <iostream>
+#include <list>
+#include <vector>
+using namespace std;
+
+class Solution {
+public:
+	bool hasPath(char* matrix, int rows, int cols, char* str)
+	{
+		this->matrix = matrix;
+		this->str = str;
+		this->rows = rows;
+		this->cols = cols;
+		// visited
+		vector<vector<bool>> visited(rows, vector<bool>(cols, false));
+		// 寻找迷宫起点
+		for (int i = 0; i < rows * cols; ++i)
+		{
+			if (matrix[i] == str[0])
+			{
+				visited[i / cols][i % cols] = true;
+				if (DFS(i / cols, i % cols, 0, visited)) return true;
+				visited[i / cols][i % cols] = false;
+			}
+		}
+		return false;
+	}
+
+	bool isvalid(int x, int y)
+	{
+		if (x >= 0 && x < rows && y >= 0 && y < cols)
+			return true;
+		return false;
+	}
+
+	bool DFS(int x, int y, int str_index, vector<vector<bool>> &visited)
+	{
+		// 四个方向
+		static pair<int, int> dir[] = { {-1, 0}, {0, -1}, {1, 0}, {0, 1} };
+		int new_x, new_y;
+
+		if (str[str_index] == matrix[x * cols + y])
+		{
+			if (str[str_index + 1] == '\0') return true;
+			for (int i = 0; i < 4; ++i)
+			{
+				new_x = x + dir[i].first;
+				new_y = y + dir[i].second;
+				if (isvalid(new_x, new_y) && !visited[new_x][new_y])
+				{
+					visited[new_x][new_y] = true;
+					if (DFS(new_x, new_y, str_index + 1, visited))
+						return true;
+					visited[new_x][new_y] = false;
+				}
+			}
+		}
+		return false;
+	}
+private:
+	int rows;
+	int cols;
+	char *matrix;
+	char *str;
+};
+
+int main(void)
+{
+	Solution sss;
+	cout << sss.hasPath("abcesfcsadee", 3, 4, "abcd");
+	return 0;
+}
+{% endcodeblock %}
+
+可以看到，DFS的代码和BFS的代码十分类似。说一下区别：1. DFS采用递归来实现; 2. 访问表在进入函数之间置位，而在退出函数之后需要复位。原因是因为DFS在访问的时候有一个回溯的过程，如果子节点没有得到需要的解，那么就需要回溯的父节点，并扩展父节点的其他子节点来搜索解，因此原来被子节点访问过的位置现在应该撤销访问。
